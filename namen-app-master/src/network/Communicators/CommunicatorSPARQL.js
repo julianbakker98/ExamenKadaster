@@ -4,6 +4,8 @@ import {
     clusterObjects,
     firstLetterCapital
 } from "../ProcessorMethods";
+import Resultaat from "../../model/Resultaat";
+import * as wellKnown from "wellknown";
 
 /**
  * Dit is het laatst ingetype string. zorgt ervoor dat je niet vorige resultaten rendert
@@ -32,54 +34,55 @@ export async function getMatch(text, url, setResFromOutside) {
 
     //update eerst de laatst ingetype string
     latestString = text;
+    // zoekresultaat word gesplitst
+    const textSplit = text.split(" ");
 
-    //doe hierna 2 queries. Eentje voor exacte match
-    let exactMatch = await queryEndpoint(nameQueryExactMatch(firstLetterCapital(text)), url);
-
-    //als de gebruiker iets nieuws heeft ingetypt geef dan undefined terug.
-    if (latestString !== text) {
-        return undefined;
-    } else if (exactMatch.status > 300) {
-        //bij een network error de string error
-        return "error";
+    // -1 pakt laatste waarde uit array, dus huisnummer als die als laatste word getypt
+    // resulaten worden samengevoegd behalve -1 (huisnummer), dit gebeurd als er meerdere losse woorden in een
+    // straatnaam staan.
+    let streetName = "", houseNumber = "";
+    if (textSplit.length === 1) {
+        streetName = firstLetterCapital(textSplit.join(" "));
+    }
+    if (textSplit.length > 1) {
+        houseNumber = textSplit.slice(-1).pop();
+        streetName = firstLetterCapital(textSplit.slice(0, -1).join(" "));
     }
 
-    //zet deze om in een array met Resultaat.js
-    exactMatch = await exactMatch.text();
-    exactMatch = JSON.parse(exactMatch);
+    const objects = [];
+    if (streetName) {
+        let exactMatch = await queryEndpoint(queryBag(streetName, houseNumber), url);
 
-    console.log(exactMatch);
+        //als de gebruiker iets nieuws heeft ingetypt geef dan undefined terug.
+        if (latestString !== text) {
+            return undefined;
+        } else if (exactMatch.status > 300) {
+            //bij een network error de string error
+            return "error";
+        }
 
-    if(exactMatch.results.bindings.length === 4000){
-        isMax = true;
+        //zet deze om in een array met Resultaat.js
+        exactMatch = await exactMatch.text();
+        exactMatch = JSON.parse(exactMatch);
+
+        const bindings = exactMatch.results.bindings;
+        for (let i = 0; i < bindings.length; i++) {
+            const huisNummer = houseNumber ? houseNumber : bindings[i].huisnummer.value;
+
+            const result = new Resultaat(
+                bindings[i].nummeraanduiding.value,
+                [streetName, huisNummer].join(" "),
+                [bindings[i].postcode.value, bindings[i].woonplaats.value].join(" "),
+                wellKnown.parse(bindings[i].shape.value),
+                "blue",
+                ""
+            );
+
+            objects.push(result);
+        }
     }
 
-    exactMatch = await makeSearchScreenResults(exactMatch, url);
-
-    //als de gebruiker alleen een exact querie wou, dan eindigt het hier.
-    if (isExactMatch) {
-        return clusterObjects(exactMatch, text, setResFromOutside);
-    }
-
-    //Doe hierna nog een query voor dingen die op de ingetypte string lijken.
-    let result = await queryEndpoint(nameQueryForRegexMatch(text, exactMatch), url);
-
-    //als de gebruiker iets nieuws heeft ingetypt geef dan undefined terug.
-    if (latestString !== text) {
-        return undefined;
-    } else if (result.status > 300) {
-        return "error";
-    }
-
-    //zet netwerk res om in een array met Resultaat.js
-    result = await result.text();
-    result = await makeSearchScreenResults(JSON.parse(result), url);
-
-    //voeg de arrays samen.
-    let res = mergeResults(exactMatch, result);
-
-    //cluster ze en stuur ze terug.
-    return clusterObjects(res, text, setResFromOutside, isMax);
+    return objects;
 }
 
 /**
@@ -120,8 +123,8 @@ async function makeSearchScreenResults(results, url) {
 
     let string = "";
     for (let i = 0; i < results.length; i++) {
-       // string += `<${results[i].sub.value}>`;
-        string += `<${results[i].x.value}>`;
+        string += `<${results[i].shape.value}>`;
+        //string += `<${results[i].x.value}>`;
     }
 
     let res = await queryEndpoint(queryBetterForType(string), url);
@@ -177,95 +180,107 @@ export async function queryEndpoint(query, url) {
  * @param query
  * @returns {string}
  */
-function nameQueryExactMatch(query) {
-    // return `PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-    //         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    //             PREFIX brt: <http://brt.basisregistraties.overheid.nl/def/top10nl#>
-    //
-    //         SELECT distinct * WHERE {
-    //           {?sub brt:naamNL "${query}"@nl.} union {?sub brt:naam "${query}"@nl.} union {?sub brt:naamFries "${query}"@fy.} UNION {?sub brt:brugnaam "${query}"@nl}  UNION {?sub brt:tunnelnaam "${query}"@nl} UNION {?sub brt:sluisnaam "${query}"@nl} UNION {?sub brt:knooppuntnaam "${query}"@nl} UNION {?sub brt:naamOfficieel  "${query}"@nl} UNION {?sub brt:naamOfficieel "${query}"@fy}
-    //         }
-    //         LIMIT 4000
+function queryBag(streetName, houseNumber) {
 
-    return `PREFIX bag: <http://bag.basisregistraties.overheid.nl/def/bag#>
-SELECT ?x WHERE {
- ?x a bag:Pand.
- ?x bag:oorspronkelijkBouwjaar ?bouwjaar.
- FILTER (?bouwjaar = 1923)
-}
-LIMIT 100`
-}
+    let result;
+    if (streetName && houseNumber) {
+        result = `PREFIX bag: <http://bag.basisregistraties.overheid.nl/def/bag#>
+                PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+                select * {
+                  ?openbareRuimte
+                    bag:bijbehorendeWoonplaats/bag:naamWoonplaats ?woonplaats;
+                    bag:naamOpenbareRuimte "${streetName}".
+                  ?nummeraanduiding
+                    bag:bijbehorendeOpenbareRuimte ?openbareRuimte;
+                    bag:huisnummer ${houseNumber};
+                    bag:postcode ?postcode.
+                  ?verblijfsobject
+                    bag:hoofdadres ?nummeraanduiding;
+                    bag:pandrelatering/geo:hasGeometry/geo:asWKT ?shape.
+                }
+                limit 1000`
+    } else {
+        result = `PREFIX bag: <http://bag.basisregistraties.overheid.nl/def/bag#>
+                PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+                select * {
+                  ?openbareRuimte
+                    bag:bijbehorendeWoonplaats/bag:naamWoonplaats ?woonplaats;
+                    bag:naamOpenbareRuimte "${streetName}".
+                  ?nummeraanduiding
+                    bag:bijbehorendeOpenbareRuimte ?openbareRuimte;
+                    bag:huisnummer ?huisnummer;
+                    bag:postcode ?postcode.
+                  ?verblijfsobject
+                    bag:hoofdadres ?nummeraanduiding;
+                    bag:pandrelatering/geo:hasGeometry/geo:asWKT ?shape.
+                }
+                limit 1000`
+    }
 
-/**
- * Query om all regex matches op te halen.
- * @param queryString
- * @param exactvalues
- * @returns {string}
- */
-function nameQueryForRegexMatch(queryString, exactvalues) {
-    let uris = [];
-    exactvalues.forEach(res => {
-        uris.push("<" + res.getUrl() + ">");
-    });
-
-    uris = uris.join(",");
-
-    return `PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            PREFIX brt: <http://brt.basisregistraties.overheid.nl/def/top10nl#>
-            
-            SELECT distinct ?sub WHERE {
-            { ?sub brt:naam ?label } UNION { ?sub brt:naamNL ?label } UNION {?sub brt:naamFries ?label} UNION {?sub brt:brugnaam ?label}  UNION {?sub brt:tunnelnaam ?label} UNION {?sub brt:sluisnaam ?label} UNION {?sub brt:knooppuntnaam ?label} UNION {?sub brt:naamOfficieel ?label}.
-              
-              filter( ?sub not IN(${uris})).
-              FILTER(REGEX(?label, "${queryString}", "i")).
-            }
-            LIMIT 1000
-            `
+    return result;
 }
 
-/**
- * Query om alle type en overige attributen op te halen van de eerder opgehaalde resultaten.
- * @param values
- * @returns {string}
- */
-export function queryBetterForType(values) {
-    return `
-    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX brt: <http://brt.basisregistraties.overheid.nl/def/top10nl#>
-    PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+    /**
+     * Query om all regex matches op te halen.
+     * @param queryString
+     * @param exactvalues
+     * @returns {string}
+     */
+    function nameQueryForRegexMatch(queryString, exactvalues) {
+        let uris = [];
+        exactvalues.forEach(res => {
+            uris.push("<" + res.getUrl() + ">");
+        });
+
+        uris = uris.join(",");
+
+        return ``
+    }
+
+    /**
+     * Query om alle type en overige attributen op te halen van de eerder opgehaalde resultaten.
+     * @param values
+     * @returns {string}
+     */
+    export function queryBetterForType(values) {
+        return `
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX brt: <http://brt.basisregistraties.overheid.nl/def/top10nl#>
+        PREFIX geo: <http://www.opengis.net/ont/geosparql#>
     
-    SELECT * WHERE {
-        VALUES ?s {
-           ${values}
-        }
-        ?s a ?type.
-        
-  Optional{?s brt:naam ?naam.}.
-  Optional{?s brt:naamNL ?naamNl.}.
-  Optional{?s brt:naamFries ?naamFries}.
-  Optional{?s brt:knooppuntnaam ?knooppuntnaam.}.
-  Optional{?s brt:sluisnaam ?sluisnaam.}.
-  Optional{?s brt:tunnelnaam ?tunnelnaam}.
-  Optional{?s brt:brugnaam ?brugnaam.}.
-  Optional{?s brt:naamOfficieel ?offnaam.}.
-  Optional{?s geo:hasGeometry/geo:asWKT ?wktJson}.
-  }
+        SELECT * WHERE {
+            VALUES ?s {
+               ${values}
+            }
+            ?s a ?type.
+    
+      Optional{?s brt:naam ?naam.}.
+      Optional{?s brt:naamNL ?naamNl.}.
+      Optional{?s brt:naamFries ?naamFries}.
+      Optional{?s brt:knooppuntnaam ?knooppuntnaam.}.
+      Optional{?s brt:sluisnaam ?sluisnaam.}.
+      Optional{?s brt:tunnelnaam ?tunnelnaam}.
+      Optional{?s brt:brugnaam ?brugnaam.}.
+      Optional{?s brt:naamOfficieel ?offnaam.}.
+      Optional{?s geo:hasGeometry/geo:asWKT ?wktJson}.
+      }
 `
-}
+    }
 
-/**
- * Haal alle attributen van een object op.
- * @param namedNode
- * @returns {string}
- */
-function allAttributesFromUrl(namedNode) {
-    return `PREFIX brt: <http://brt.basisregistraties.overheid.nl/def/top10nl#>
+
+    /**
+     * Haal alle attributen van een object op.
+     * @param namedNode
+     * @returns {string}
+     */
+    function allAttributesFromUrl(namedNode) {
+        return `PREFIX brt: <http://brt.basisregistraties.overheid.nl/def/top10nl#>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
             SELECT * WHERE {
                 <${namedNode}> ?prd ?obj.
             }`
+
 }

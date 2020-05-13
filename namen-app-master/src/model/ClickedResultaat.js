@@ -95,7 +95,7 @@ class ClickedResultaat extends Observable {
         this._knoopPuntNaam = knooppuntNaam;
 
         let url = this._res.getUrl();
-        this._overige.unshift({key: "brt link", value: url});
+        this._overige.unshift({key: "link", value: url});
 
         if (this._naam === undefined) {
             if (this._naamOfficieel !== undefined) {

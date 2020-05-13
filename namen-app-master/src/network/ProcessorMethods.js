@@ -750,6 +750,11 @@ export function processGetAllAttributes(res, clickedRes) {
         overigeAttributen.push({key: "oppervlakte", value: area});
     }
 
+    let type = [];
+    if (indexes.length) {
+        type.push([indexes[0].type]);
+    }
+
     /**
      * Laad de attributen in de clicked res
      */
@@ -758,7 +763,7 @@ export function processGetAllAttributes(res, clickedRes) {
         naamOfficieel,
         naamNl,
         naamFries,
-        [indexes[0].type],
+        type,
         overigeAttributen,
         burgNaam,
         tunnelNaam,

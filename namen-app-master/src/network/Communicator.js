@@ -4,10 +4,9 @@
  */
 import * as CommunicatorSPARQL from './Communicators/CommunicatorSPARQL';
 import * as ClickedCommunicator from './Communicators/ClickedCommunicator';
-import * as CommunicatorELASTICSEARCH from "./Communicators/CommunicatorELASTICSEARCH";
 
-const labsURL = "https://api.labs.kadaster.nl/datasets/kadaster/brt/services/brt/sparql";
-const pdokURL = "https://data.pdok.nl/sparql";
+const labsURL = "https://api.labs.kadaster.nl/datasets/kadaster/bag/services/bag/sparql";
+const pdokURL = "https://api.labs.kadaster.nl/datasets/kadaster/bag/services/bag/sparql";
 
 /**
  * Laatste string waar op is gezocht
@@ -27,9 +26,7 @@ let latestMethod = "";
  */
 export function getOptions() {
     return [
-        {value: 'psp', text: 'PDOK SPARQL', description: "meest actueel"},
-        // {value: 'tsp', text: 'Kadaster Labs SPARQL', description: "snel"},
-        // {value: 'tes', text: 'Kadaster Labs Elasticsearch', description: "snelste"},
+        {value: 'tsp', text: 'Kadaster Labs SPARQL', description: "snel"},
     ];
 }
 
@@ -49,10 +46,6 @@ export async function getMatch(text, method, setResFromOutside) {
     //query op basis van de methode die de gebruiker gespecificeerd heeft.
     if (method === "tsp") {
         res = await CommunicatorSPARQL.getMatch(text, labsURL, setResFromOutside);
-    } else if (method === "psp") {
-        res = await CommunicatorSPARQL.getMatch(text, pdokURL, setResFromOutside);
-    } else {
-        res = await CommunicatorELASTICSEARCH.getMatch(text, labsURL, setResFromOutside);
     }
 
     //als het of een error is en als de laatste methode en gezochte string overeenkomen. geef dan het resultaat terug.
