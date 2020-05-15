@@ -1,4 +1,5 @@
 import React from 'react';
+import Graph from "react-graph-vis";
 import * as Communicator from '../../network/Communicator';
 
 /**
@@ -25,7 +26,7 @@ class ObjectScreen extends React.Component {
         if (url) {
             Communicator.getAllAttribtes(this.props.clickedResult).then(res => {
                 this.setState({
-                    res: this.props.clickedResult
+                    res: this.props.clickedResult,
                 })
             });
         }
@@ -38,7 +39,15 @@ class ObjectScreen extends React.Component {
         let tableNamen;
         let tableRest;
 
+        let houseNumberString = 'Huisnummer';
+        let streetNameString = 'Straatnaam';
+        let postalCodeString = 'Postcode';
+
         if (res) {
+            if (res.getRes() && res.getRes().getNaam()) {
+                streetNameString += '\n' + res.getRes().getNaam();
+            }
+
             if(res.getNaam()){
                 naam = (<h1>{res.getNaam()}</h1>);
             }else{
@@ -152,6 +161,12 @@ class ObjectScreen extends React.Component {
             let attributes = res.getAttributes().map(res => {
                 let value = res.value;
 
+                if (res.key === "huisnummer") {
+                    houseNumberString += '\n' + res.value;
+                } else if (res.key === "postcode") {
+                    postalCodeString += '\n' + res.value;
+                }
+
                 if(value.startsWith("http://")){
                     value = (<a href={value} target="_blank" rel = "noreferrer noopener">{value}</a>);
                 }
@@ -171,8 +186,64 @@ class ObjectScreen extends React.Component {
             )
         }
 
+        const graph = {
+            nodes: [
+                { id: 1, font: { multi: true }, label: '<b>Woning</b>' },
+                { id: 2, font: { multi: true }, label: '<b>Verblijfs Object</b>' },
+                { id: 3, font: { multi: true }, label: houseNumberString },
+                { id: 4, font: { multi: true }, label: 'Toevoeging huisnummer' },
+                { id: 5, font: { multi: true }, label: '<b>Oppervlakte</b>' },
+                { id: 6, font: { multi: true }, label: streetNameString },
+                { id: 7, font: { multi: true }, label: postalCodeString },
+                { id: 8, font: { multi: true }, label: 'Bouwjaar' },
+                { id: 9, font: { multi: true }, label: '<b>Adres</b>' }
+            ],
+            edges: [
+                { from: 9, to: 3 },
+                { from: 1, to: 2 },
+                { from: 3, to: 4 },
+                { from: 1, to: 6 },
+                { from: 1, to: 5 },
+                { from: 9, to: 7 },
+                { from: 7, to: 3 },
+                { from: 1, to: 8 },
+                { from: 1, to: 9},
+            ]
+        };
+
+        const options = {
+            physics: false,
+            nodes: {
+                shape: 'box',
+
+                font: {
+                    boldital: { color: 'black' },
+                    ital: { color: 'black' },
+                    mono: { color: 'black' },
+                    bold: { color: 'black' },
+                    color: 'black',
+                },
+                color: "skyblue"
+            },
+            edges: {
+                arrows: 'to',
+                smooth: false
+            },
+        };
+
+        const events = {
+            select: function(event) {
+                var { nodes, edges } = event;
+                console.log("Selected nodes:");
+                console.log(nodes);
+                console.log("Selected edges:");
+                console.log(edges);
+            }
+        };
+
         return (
             <div className="objectScreen">
+                <Graph graph={graph} options={options} events={events} style={{ height: "250px", width: "30vw" }} />
                 {naam}
                 {type}
                 {tableNamen}

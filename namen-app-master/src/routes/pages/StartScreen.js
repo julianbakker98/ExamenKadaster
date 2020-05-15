@@ -8,6 +8,7 @@ class StartScreen extends React.Component {
     return (
       <div className="startScreen">
         <p className="explainText">
+            /-..
           Aardrijkskundige namen zijn onmisbaar om te beschrijven waar we zijn,
           waar we vandaan komen en waar we naartoe gaan. Ben je nieuwsgierig
           waar in Nederland een naam voorkomt? Met de Toponamenzoeker zoek je in

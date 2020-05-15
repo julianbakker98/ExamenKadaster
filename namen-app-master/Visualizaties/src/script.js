@@ -22,9 +22,7 @@ var edges = new vis.DataSet([
     { from: 9, to: 7 },
     { from: 7, to: 3 },
     { from: 1, to: 8 },
-    { from: 1, to: 9},
-
-
+    { from: 1, to: 9}
 ]);
 
 var data = {
