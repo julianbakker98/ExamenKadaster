@@ -8,18 +8,14 @@ class StartScreen extends React.Component {
     return (
       <div className="startScreen">
         <p className="explainText">
-            /-..
-          Aardrijkskundige namen zijn onmisbaar om te beschrijven waar we zijn,
-          waar we vandaan komen en waar we naartoe gaan. Ben je nieuwsgierig
-          waar in Nederland een naam voorkomt? Met de Toponamenzoeker zoek je in
-          bijna 200.000 unieke namen uit de topografische bestanden en kaarten
-          van het Kadaster (uit de{" "}
+            Ben je nieuwsgierig naar de gegevens van een woning in Nederland? Met de Woning-zoeker zoek je in
+          de bestanden en kaarten van het Kadaster naar unieke woningen (uit de{" "}
           <a
-            href="http://www.kadaster.nl/brt"
+            href="http://www.kadaster.nl/bag"
             target="_blank"
             rel="noreferrer noopener"
           >
-            Basisregistratie Topografie (BRT)
+            Basisregistratie adressen en gebouwen BAG
           </a>
           ). Je ziet gemeentenamen, maar ook namen van plaatsen, wegen, wateren,
           gebieden, gebouwen en allerlei andere Nederlandse objecten.
@@ -29,9 +25,7 @@ class StartScreen extends React.Component {
         <ol>
           <li>
             Typ in de zoekbalk hierboven een naam in. Er verschijnen namen die
-            exact je zoekterm zijn, maar ook namen die je zoekterm bevatten. Wil
-            je alleen de resultaten die precies gelijk zijn? Zet dan je zoekterm
-            tussen dubbele aanhalingstekens (“ ”).
+            exact je zoekterm zijn, maar ook namen die je zoekterm bevatten.
           </li>
           <li>
             Klik met je rechtermuisknop op een locatie op de kaart (bij een
@@ -43,12 +37,11 @@ class StartScreen extends React.Component {
 
         <p className="explainText">
           Als je een zoekresultaat aanklikt, krijg je aanvullende informatie
-          over het bijbehorende object te zien. Bij welk object hoort de naam,
-          wat is de functie, hoeveel inwoners heeft je stad of dorp, wat is de
-          oppervlakte van een gebied?
+          over het bijbehorende object te zien. Bij welk object hoort de naam? wat is de bouwjaar van een woning? wat is de
+          oppervlakte van een perceel?
         </p>
 
-        <p className="boldHeaderText">Mis je nog een naam? Meld het ons!</p>
+        <p className="boldHeaderText">Mis je nog een naam of woning? Meld het ons!</p>
         <p className="explainText">
           Via{" "}
           <a
@@ -61,11 +54,11 @@ class StartScreen extends React.Component {
           kun je onjuiste of ontbrekende namen terugmelden. Dankzij jouw hulp
           kunnen we onze bestanden en kaarten optimaliseren.
         </p>
-        <p className="boldHeaderText">Meer van de BRT zien?</p>
+        <p className="boldHeaderText">Meer van de BAG zien?</p>
         <p className="explainText">
           Kijk ook eens naar onze{" "}
           <a
-            href="https://labs.kadaster.nl/cases/brt"
+            href="https://bag.basisregistraties.overheid.nl/"
             target="_blank"
             rel="noreferrer noopener"
           >
@@ -83,11 +76,11 @@ class StartScreen extends React.Component {
         </p>
         <p className="boldHeaderText">Over de Topo Namenzoeker</p>
         <p className="explainText">
-          De Toponamenzoeker is ontwikkeld door het Kadaster. De applicatie
-          maakt de grote verscheidenheid aan aardrijkskundige namen in de BRT
+          De woning-zoeker is ontwikkeld door het Kadaster. De applicatie
+          maakt de grote verscheidenheid aan aardrijkskundige namen en woningen in de BAG
           zichtbaar en toegankelijk, en laat daarnaast de technische
           mogelijkheden van Linked Data zien. We zien graag je reactie op de
-          Toponamenzoeker op het {" "}
+          woning-zoeker op het {" "}
           <a
             href="https://geoforum.nl/"
             target="_blank"

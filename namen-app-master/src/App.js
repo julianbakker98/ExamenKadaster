@@ -935,7 +935,7 @@ class App extends React.Component {
                         this.handleDeleteClick();
                     }}>
                         <div className="header">
-                            <h1>Toponamenzoeker</h1><img src={KadasterImg} alt="kadaster logo"/>
+                            <h1>Woning Zoeker</h1><img src={KadasterImg} alt="kadaster logo"/>
                         </div>
                     </Link>
                     <div className="searchBar">
@@ -971,8 +971,8 @@ class App extends React.Component {
                     </div>
                     <div className="footer">
                         {gearIcon}
-                        <a href="https://zakelijk.kadaster.nl/brt" target="_blank" rel="noreferrer noopener">Lees meer
-                            over de Basisregistratie Topografie (BRT)</a>
+                        <a href="http://www.kadaster.nl/bag" target="_blank" rel="noreferrer noopener">Lees meer
+                            over de Basisregistratie Adressen en gebouwen (BAG)</a>
                     </div>
                 </div>
                 <div className={className} onContextMenu={(e) => e.preventDefault()}>
